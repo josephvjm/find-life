@@ -1,0 +1,63 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    build:
+        strategy:
+            matrix:
+                include:
+                    - os: ubuntu-22.04 # oldest supported glibc for broad Linux compat
+                      artifact: find-life-linux-x86_64
+                    - os: macos-latest
+                      artifact: find-life-macos-arm64
+                    - os: windows-latest
+                      artifact: find-life-windows-x86_64.exe
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                  pip install pyinstaller
+                  pip install -e .
+
+            - name: Build binary
+              run: pyinstaller --onefile --name find-life src/find_life/cli.py
+
+            # Linux/macOS output has no extension; Windows produces .exe
+            - name: Rename artifact (Unix)
+              if: runner.os != 'Windows'
+              run: mv dist/find-life dist/${{ matrix.artifact }}
+
+            - name: Rename artifact (Windows)
+              if: runner.os == 'Windows'
+              run: mv dist/find-life.exe dist/${{ matrix.artifact }}
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.artifact }}
+                  path: dist/${{ matrix.artifact }}
+
+    release:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                  path: dist
+                  merge-multiple: true
+
+            - uses: softprops/action-gh-release@v2
+              with:
+                  files: dist/*
+                  generate_release_notes: true

@@ -1,0 +1,25 @@
+[project]
+name = "find-life"
+version = "0.2.4"
+description = "Search the taxonomy of any organism by scientific or common name."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.3.3",
+    "httpx>=0.28.1",
+]
+
+[project.scripts]
+find-life = "find_life.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=61.0"] # Use a common build backend
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+]
